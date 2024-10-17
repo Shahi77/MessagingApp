@@ -1,11 +1,11 @@
 const express = require("express");
 const http = require("http");
-const WebSocket = require("ws");
+const { WebSocketServer, WebSocket } = require("ws");
 
 const app = express();
-const server = http.createServer(app);
+const server = app.listen(8000);
 
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
 wss.on("connection", (socket) => {
   socket.on("error", console.error);
@@ -17,6 +17,7 @@ wss.on("connection", (socket) => {
       }
     });
   });
+  console.log("Socket connection successful!!");
   socket.send("Hello! Message from server!!");
 });
 
