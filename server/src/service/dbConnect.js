@@ -1,4 +1,4 @@
-const { DB_NAME } = require("../constants");
+const { DB_NAME } = require("../utils/constants");
 const mongoose = require("mongoose");
 
 const connectDB = async () => {
