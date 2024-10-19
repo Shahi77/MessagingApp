@@ -7,14 +7,13 @@ const handleSendMessage = asyncHandler(async (req, res) => {
   const { message } = req.body;
   const receiverId = req.params.receiverId;
   const senderId = req.user.id;
-  const currentDate = new Date().toISOString();
+  //const currentDate = new Date().toISOString();
 
   // Create a new message
   const newMessage = new Message({
-    senderId: senderId,
-    receiverId: receiverId,
+    sender: senderId,
+    receiver: receiverId,
     message: message,
-    createdAt: currentDate,
   });
   // Save message to MongoDB
   await newMessage.save();

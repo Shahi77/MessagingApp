@@ -8,6 +8,9 @@ const { AUTH_COOKIE_OPTIONS } = require("../configs/authCookie.config");
 const generateTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
@@ -36,11 +39,7 @@ const handleUserSignup = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with email already exists");
   }
 
-  const user = await User.create({
-    name: name,
-    email: email,
-    password: password,
-  });
+  const user = await User.create({ name, email, password });
 
   const createdUser = await User.findById(user?._id).select(
     "-password -refreshToken"
