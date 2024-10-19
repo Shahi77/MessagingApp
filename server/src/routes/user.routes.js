@@ -1,6 +1,5 @@
 const { Router } = require("express");
 const {
-  handleUpdateTokens,
   handleUserLogin,
   handleUserLogout,
   handleUserSignup,
@@ -12,6 +11,5 @@ const userRouter = Router();
 userRouter.post("/signup", handleUserSignup);
 userRouter.post("/login", handleUserLogin);
 userRouter.post("/logout", verifyJwt, handleUserLogout);
-userRouter.post("/update-tokens", handleUpdateTokens);
 
 module.exports = userRouter;

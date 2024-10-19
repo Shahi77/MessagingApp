@@ -3,6 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const { EMAIL_REGEX } = require("../utils/constants");
+const { AUTH_COOKIE_OPTIONS } = require("../configs/authCookie.config");
 
 const generateTokens = async (userId) => {
   try {
@@ -108,37 +109,8 @@ const handleUserLogout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
-const handleUpdateTokens = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies.refreshToken;
-  if (!incomingRefreshToken) {
-    throw new ApiError(401, "Unauthorized Request");
-  }
-
-  const decodedToken = jwt.verify(
-    incomingRefreshToken,
-    process.env.REFRESH_TOKEN_SECRET
-  );
-
-  const user = await User.findById(decodedToken?._id);
-  if (!user) {
-    throw new ApiError(401, "Invalid refresh token");
-  }
-
-  if (incomingRefreshToken !== user?.refreshToken) {
-    throw new ApiError(401, "Refresh Token Expired");
-  }
-
-  const { accessToken, refreshToken } = await generateTokens(user._id);
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, AUTH_COOKIE_OPTIONS)
-    .cookie("refreshToken", refreshToken, AUTH_COOKIE_OPTIONS)
-    .json(new ApiResponse(200, {}, "Access Token Refreshed successfully"));
-});
-
 module.exports = {
   handleUserSignup,
   handleUserLogin,
   handleUserLogout,
-  handleUpdateTokens,
 };
