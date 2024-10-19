@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios"; // Import Axios
+import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const AuthPage = () => {
@@ -25,11 +25,9 @@ const AuthPage = () => {
         password: loginData.password,
       });
 
-      // Assuming a successful response will have a specific structure
       if (response.status === 200) {
         alert("Login successful!");
 
-        // Reload or redirect after successful login
         window.location.reload();
       }
     } catch (error) {
@@ -72,7 +70,6 @@ const AuthPage = () => {
       if (response.status === 201) {
         alert("Signup successful!");
 
-        // Reload or redirect after successful signup
         window.location.reload();
       }
     } catch (error) {
