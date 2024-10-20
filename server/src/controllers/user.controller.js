@@ -66,32 +66,36 @@ const handleUserSignup = asyncHandler(async (req, res) => {
 });
 
 const handleUserLogin = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  if ([email, password].some((field) => field?.trim() === "")) {
-    throw new ApiError(400, "Email & Password are required fields");
+  try {
+    const { email, password } = req.body;
+    if ([email, password].some((field) => field?.trim() === "")) {
+      throw new ApiError(400, "Email & Password are required fields");
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      throw new ApiError(404, "User with the email doesn't exist");
+    }
+
+    const isPasswordCorrect = await user.comparePassword(password);
+    if (!isPasswordCorrect) {
+      throw new ApiError(401, "Password incorrect");
+    }
+
+    const loggedInUser = await User.findById(user._id).select(
+      "-password -refreshToken"
+    );
+
+    const { accessToken, refreshToken } = await generateTokens(user._id);
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, AUTH_COOKIE_OPTIONS)
+      .cookie("refreshToken", refreshToken, AUTH_COOKIE_OPTIONS)
+      .json(new ApiResponse(200, loggedInUser, "Logged in Successfully"));
+  } catch (error) {
+    console.log(error);
   }
-
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    throw new ApiError(404, "User with the email doesn't exist");
-  }
-
-  const isPasswordCorrect = await user.comparePassword(password);
-  if (!isPasswordCorrect) {
-    throw new ApiError(401, "Password incorrect");
-  }
-
-  const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
-
-  const { accessToken, refreshToken } = await generateTokens(user._id);
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, AUTH_COOKIE_OPTIONS)
-    .cookie("refreshToken", refreshToken, AUTH_COOKIE_OPTIONS)
-    .json(new ApiResponse(200, { loggedInUser }, "Logged in Successfully"));
 });
 
 const handleUserLogout = asyncHandler(async (req, res) => {
@@ -108,8 +112,25 @@ const handleUserLogout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
+const handleGetAllUsers = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const users = await User.find({ _id: { $ne: user._id } }).select(
+    "-password -refreshToken"
+  );
+
+  if (!users) {
+    throw new ApiError(500, "Something went wrong while fetching users");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { users }, "Users fetched successfully"));
+});
+
 module.exports = {
   handleUserSignup,
   handleUserLogin,
   handleUserLogout,
+  handleGetAllUsers,
 };
