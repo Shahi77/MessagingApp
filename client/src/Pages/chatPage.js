@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const ChatPage = () => {
@@ -8,11 +9,28 @@ const ChatPage = () => {
   const [receiverId, setReceiverId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [ws, setWs] = useState(null);
-  const userId = "YOUR_USER_ID"; // Replace with actual user ID from your context or state or from auth
+
+  const user = JSON.parse(window.localStorage.getItem("user"));
+  const userId = user._id;
+
   useEffect(() => {
     // Initialize WebSocket connection
     const websocket = new WebSocket("ws://localhost:8000");
     setWs(websocket);
+
+    websocket.onopen = () => {
+      console.log("WebSocket connection established.");
+
+      // Send the current user's ID as a registration message to the server
+      if (userId) {
+        websocket.send(
+          JSON.stringify({
+            sender: JSON.parse(window.localStorage.getItem("user"))._id,
+            message: "register",
+          })
+        );
+      }
+    };
 
     // Handle incoming messages
     websocket.onmessage = (event) => {
@@ -42,10 +60,8 @@ const ChatPage = () => {
     // Fetch all users
     const fetchUsers = async () => {
       try {
-        const response = await fetch("/v1/user/all");
-        const data = await response.json();
-        console.log("Users fetched:", data.data.users); // Debugging line
-        setUsers(data.data.users);
+        const response = await axios.get("/v1/user/all");
+        setUsers(response.data.data.users);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -54,7 +70,9 @@ const ChatPage = () => {
     fetchUsers();
 
     return () => {
-      websocket.close();
+      if (websocket.readyState === WebSocket.OPEN) {
+        websocket.close();
+      }
     };
   }, [receiverId]);
 
@@ -65,22 +83,23 @@ const ChatPage = () => {
         receiver: receiverId,
         message,
       };
+      console.log(messageData);
 
       try {
-        const response = await fetch(`/v1/messages/${receiverId}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(messageData),
+        const response = await axios.post(`/v1/messages/${receiverId}`, {
+          message: messageData.message,
         });
 
-        if (!response.ok) {
+        if (response.status !== 201) {
           throw new Error(`Error sending message: ${response.statusText}`);
         }
 
         // Send the message through WebSocket
-        ws.send(JSON.stringify(messageData));
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(messageData));
+        } else {
+          console.error("WebSocket is not open. Ready state:", ws?.readyState);
+        }
 
         setMessage(""); // Clear the input field
       } catch (error) {
@@ -91,12 +110,7 @@ const ChatPage = () => {
 
   const fetchMessages = async (userId) => {
     try {
-      const response = await fetch(`/v1/messages/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await axios.get(`/v1/messages/${userId}`);
 
       const data = await response.json();
       console.log("Messages fetched for user", userId, ":", data.messages); // Debugging line
@@ -107,6 +121,7 @@ const ChatPage = () => {
   };
 
   const handleUserSelect = (user) => {
+    console.log(user);
     setReceiverId(user.id);
     setSelectedUser(user);
     fetchMessages(user.id); // Fetch messages for the selected user
@@ -114,15 +129,12 @@ const ChatPage = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/v1/user/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await axios.post("/v1/user/logout");
 
-      if (!response.ok) throw new Error("Logout failed");
-      window.location.reload();
+      if (response.status === 200) {
+        window.localStorage.removeItem("user");
+        window.location.reload();
+      }
     } catch (error) {
       alert("Internal Server Error");
       console.error(error);

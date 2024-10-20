@@ -20,7 +20,7 @@ const AuthPage = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:8000/v1/user/login", {
+      const response = await axios.post("/v1/user/login", {
         email: loginData.email,
         password: loginData.password,
       });
@@ -58,14 +58,11 @@ const AuthPage = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:8000/v1/user/signup",
-        {
-          name,
-          email,
-          password,
-        }
-      );
+      const response = await axios.post("/v1/user/signup", {
+        name,
+        email,
+        password,
+      });
 
       if (response.status === 201) {
         alert("Signup successful!");

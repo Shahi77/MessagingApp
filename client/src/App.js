@@ -1,27 +1,19 @@
 import "./App.css";
 import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import ChatPage from "./Pages/chatPage";
 import AuthPage from "./Pages/authPage";
+import axios from "axios";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  axios.defaults.withCredentials = true;
+  axios.defaults.baseURL = "http://localhost:8000";
   return (
     <>
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              isLoggedIn ? (
-                <ChatPage />
-              ) : (
-                <AuthPage setIsLoggedIn={setIsLoggedIn} />
-              )
-            }
-          />
-        </Routes>
-      </BrowserRouter>
+      <Routes>
+        <Route path="/" element={<AuthPage />} />
+        <Route path="/home" element={<ChatPage />} />
+      </Routes>
     </>
   );
 }
